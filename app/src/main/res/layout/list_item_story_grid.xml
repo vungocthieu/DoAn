@@ -2,6 +2,7 @@
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="150dp"
     android:layout_height="wrap_content"
     app:cardBackgroundColor="@color/card_background_color"
@@ -19,13 +20,14 @@
             android:layout_width="match_parent"
             android:layout_height="180dp"
             android:scaleType="centerCrop"
-            android:src="@drawable/pham_nhan_tu_tien" />
+            android:src="@drawable/pham_nhan_tu_tien"
+            tools:ignore="ContentDescription" />
 
         <TextView
             android:id="@+id/text_view_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Tên Truyện Dài Lắm Luôn Đó"
+            android:text="Tên Truyện Dài Lắm Luôn Đó Để Thử Nghiệm"
             android:textSize="15sp"
             android:textStyle="bold"
             android:textColor="@color/text_primary_color"
@@ -35,15 +37,35 @@
             android:maxLines="2"
             android:ellipsize="end"/>
 
-        <TextView
-            android:id="@+id/text_view_author"
+        <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Tên tác giả"
-            android:textSize="13sp"
-            android:textColor="@color/text_secondary_color"
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
-            android:paddingBottom="8dp"/>
+            android:paddingBottom="8dp">
+
+            <TextView
+                android:id="@+id/text_view_author"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tên tác giả"
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary_color"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:layout_toStartOf="@+id/image_view_delete_item"/>
+
+            <ImageView
+                android:id="@+id/image_view_delete_item"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_delete"
+                app:tint="@color/text_secondary_color"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:padding="2dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                tools:ignore="ContentDescription" />
+        </RelativeLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
