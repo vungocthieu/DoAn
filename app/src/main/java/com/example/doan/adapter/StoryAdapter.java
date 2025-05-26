@@ -14,9 +14,9 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.doan.R;
-import com.example.doan.ReadingListHelper; // Cần cho chức năng xóa
+import com.example.doan.ReadingListHelper;
 import com.example.doan.StoryDetailActivity;
-import com.example.doan.fragments.LibraryFragment; // Để gọi hàm cập nhật UI của LibraryFragment
+import com.example.doan.fragments.LibraryFragment;
 import com.example.doan.model.Story;
 import com.google.gson.Gson;
 
@@ -28,18 +28,19 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.StoryViewHol
 
     private Context context;
     private List<Story> storyListDisplay; // Danh sách truyện đang thực sự được hiển thị
-    private List<Story> storyListOriginal; // Danh sách gốc, không thay đổi khi lọc, dùng để reset
+    private List<Story> storyListOriginal; // Danh sách gốc, dùng cho việc reset filter
     private boolean showDeleteButton;
 
     // Constructor chính
     public StoryAdapter(Context context, List<Story> originalStoryList, boolean showDeleteButton) {
         this.context = context;
-        this.storyListOriginal = new ArrayList<>(originalStoryList); // Lưu bản gốc
-        this.storyListDisplay = new ArrayList<>(originalStoryList);  // Ban đầu hiển thị tất cả
+        // Tạo bản sao để tránh tham chiếu trực tiếp và các vấn đề khi nhiều adapter dùng chung list
+        this.storyListOriginal = new ArrayList<>(originalStoryList);
+        this.storyListDisplay = new ArrayList<>(originalStoryList);
         this.showDeleteButton = showDeleteButton;
     }
 
-    // Constructor phụ, thường dùng cho HomeFragment và SearchFragment (không có nút xóa)
+    // Constructor phụ
     public StoryAdapter(Context context, List<Story> originalStoryList) {
         this(context, originalStoryList, false);
     }
@@ -97,11 +98,20 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.StoryViewHol
                         helper.removeStoryFromReadingList(storyToRemove.getId());
 
                         // Xóa khỏi cả hai danh sách để đồng bộ
-                        storyListOriginal.remove(storyToRemove);
-                        storyListDisplay.remove(currentPosition);
+                        // Quan trọng: Phải xóa khỏi storyListOriginal trước nếu nó là nguồn cho storyListDisplay khi filter
+                        boolean removedFromOriginal = storyListOriginal.remove(storyToRemove);
+                        boolean removedFromDisplay = storyListDisplay.remove(storyToRemove); // Hoặc remove theo position
 
-                        notifyItemRemoved(currentPosition);
-                        notifyItemRangeChanged(currentPosition, storyListDisplay.size());
+
+                        if(removedFromDisplay) { // Chỉ notify nếu thực sự xóa khỏi list display
+                            notifyItemRemoved(currentPosition);
+                            notifyItemRangeChanged(currentPosition, storyListDisplay.size());
+                        } else if (removedFromOriginal) {
+                            // Nếu chỉ xóa khỏi original mà không có trong display (ít khi xảy ra nếu logic đúng)
+                            // thì có thể cần cập nhật lại display list từ original list đã thay đổi
+                            filter(""); // Gọi filter với query rỗng để làm mới display list từ original list
+                        }
+
 
                         Toast.makeText(context, "Đã xóa: " + storyToRemove.getTitle(), Toast.LENGTH_SHORT).show();
 
@@ -122,14 +132,14 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.StoryViewHol
         return storyListDisplay.size();
     }
 
-    // Phương thức để lọc danh sách (dùng cho SearchFragment)
+    // Phương thức để lọc danh sách
     public void filter(String query) {
         List<Story> filteredList = new ArrayList<>();
         if (query == null || query.isEmpty()) {
-            filteredList.addAll(storyListOriginal); // Hiển thị lại toàn bộ danh sách gốc
+            filteredList.addAll(storyListOriginal);
         } else {
             String filterPattern = query.toLowerCase(Locale.getDefault()).trim();
-            for (Story story : storyListOriginal) { // Luôn lọc từ danh sách đầy đủ gốc
+            for (Story story : storyListOriginal) {
                 if (story.getTitle().toLowerCase(Locale.getDefault()).contains(filterPattern) ||
                         (story.getAuthor() != null && story.getAuthor().toLowerCase(Locale.getDefault()).contains(filterPattern))) {
                     filteredList.add(story);
@@ -141,15 +151,34 @@ public class StoryAdapter extends RecyclerView.Adapter<StoryAdapter.StoryViewHol
         notifyDataSetChanged();
     }
 
-    // Phương thức để cập nhật dữ liệu cho Adapter (dùng cho LibraryFragment)
+    // PHƯƠNG THỨC NÀY PHẢI TỒN TẠI
     public void updateData(List<Story> newStoryList) {
-        // Cập nhật cả hai danh sách để việc xóa trong LibraryFragment không ảnh hưởng đến filter của SearchFragment
         this.storyListOriginal.clear();
-        this.storyListOriginal.addAll(newStoryList); // Danh sách gốc cho adapter này giờ là danh sách được truyền vào
+        this.storyListOriginal.addAll(newStoryList);
         this.storyListDisplay.clear();
-        this.storyListDisplay.addAll(newStoryList); // Danh sách hiển thị cũng là danh sách mới
+        this.storyListDisplay.addAll(newStoryList);
         notifyDataSetChanged();
-        Log.d("StoryAdapter", "Data updated. Displaying: " + storyListDisplay.size() + ", Original in adapter: " + storyListOriginal.size());
+        Log.d("StoryAdapter", "Data updated for Library/Category. Displaying: " + (storyListDisplay != null ? storyListDisplay.size() : "null"));
+    }
+
+    // PHƯƠNG THỨC NÀY PHẢI TỒN TẠI ĐÚNG NHƯ VẦY
+    public void setData(List<Story> newStoryList) {
+        if (this.storyListOriginal == null) {
+            this.storyListOriginal = new ArrayList<>();
+        }
+        if (this.storyListDisplay == null) {
+            this.storyListDisplay = new ArrayList<>();
+        }
+        this.storyListOriginal.clear();
+        if (newStoryList != null) {
+            this.storyListOriginal.addAll(newStoryList);
+        }
+        this.storyListDisplay.clear();
+        if (newStoryList != null) {
+            this.storyListDisplay.addAll(newStoryList);
+        }
+        notifyDataSetChanged();
+        Log.d("StoryAdapter", "setData called. Displaying: " + this.storyListDisplay.size() + " items. Original: " + this.storyListOriginal.size());
     }
 
 
