@@ -1,7 +1,12 @@
-package com.example.doan; // Đảm bảo package name đúng
+package com.example.doan;
 
 import android.os.Bundle;
 import android.view.MenuItem;
+// Bỏ import Menu, MenuInflater nếu không dùng onCreateOptionsMenu
+// import android.view.Menu;
+// import android.view.MenuInflater;
+// import androidx.appcompat.widget.SearchView;
+
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -11,9 +16,12 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.navigation.NavigationBarView; // QUAN TRỌNG: Import đúng
+import com.google.android.material.navigation.NavigationBarView;
 import com.example.doan.fragments.HomeFragment;
-// TODO: Import các Fragment khác khi bạn tạo chúng (SearchFragment, LibraryFragment, ...)
+import com.example.doan.fragments.LibraryFragment;
+import com.example.doan.fragments.SearchFragment;
+import com.example.doan.fragments.CategoryFragment;
+import com.example.doan.fragments.ProfileFragment;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -29,12 +37,10 @@ public class MainActivity extends AppCompatActivity {
 
         bottomNavigationView = findViewById(R.id.bottom_navigation);
 
-        // Đặt HomeFragment làm màn hình mặc định
         if (savedInstanceState == null) {
             loadFragment(new HomeFragment());
         }
 
-        // Xử lý sự kiện khi chọn item trên BottomNavigationView
         bottomNavigationView.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
@@ -43,16 +49,15 @@ public class MainActivity extends AppCompatActivity {
 
                 if (itemId == R.id.navigation_home) {
                     selectedFragment = new HomeFragment();
-                    // } else if (itemId == R.id.navigation_library) {
-                    // selectedFragment = new LibraryFragment(); // Ví dụ
-                    // } else if (itemId == R.id.navigation_search) {
-                    // selectedFragment = new SearchFragment(); // Ví dụ
-                    // } else if (itemId == R.id.navigation_category) {
-                    // selectedFragment = new CategoryFragment(); // Ví dụ
-                    // } else if (itemId == R.id.navigation_profile) {
-                    // selectedFragment = new ProfileFragment(); // Ví dụ
+                } else if (itemId == R.id.navigation_library) {
+                    selectedFragment = new LibraryFragment();
+                } else if (itemId == R.id.navigation_search) {
+                    selectedFragment = new SearchFragment();
+                } else if (itemId == R.id.navigation_category) {
+                    selectedFragment = new CategoryFragment();
+                } else if (itemId == R.id.navigation_profile) {
+                    selectedFragment = new ProfileFragment();
                 }
-                // Thêm các else if cho các mục khác khi bạn tạo Fragment cho chúng
 
                 if (selectedFragment != null) {
                     loadFragment(selectedFragment);
@@ -63,11 +68,12 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // Hàm để tải Fragment vào fragment_container
     private void loadFragment(Fragment fragment) {
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.fragment_container, fragment);
         fragmentTransaction.commit();
     }
+
+    // KHÔNG CÒN PHƯƠNG THỨC onCreateOptionsMenu VÀ performSearch Ở ĐÂY NỮA
 }

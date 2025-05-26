@@ -1,4 +1,4 @@
-package com.example.doan; // Đảm bảo package name đúng
+package com.example.doan; // Thay bằng package name chính của bạn
 
 import android.graphics.Color;
 import android.os.Bundle;
@@ -24,6 +24,7 @@ public class ReaderActivity extends AppCompatActivity {
     private Toolbar toolbarReader;
     private float currentFontSize = 18f;
     private int currentTheme = 0;
+    // Không cần currentStory và currentChapterIndex ở cấp lớp cho phiên bản đơn giản này
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,17 +48,24 @@ public class ReaderActivity extends AppCompatActivity {
         String chapterTitleToShow = "Đọc truyện";
         String chapterContentToShow = "Lỗi: Không tìm thấy nội dung chương.";
 
-        if (storyJson != null) {
+        if (storyJson != null && !storyJson.isEmpty()) {
             Gson gson = new Gson();
             Story story = gson.fromJson(storyJson, Story.class);
+
             if (story != null && story.getChapters() != null &&
                     chapterIndexToShow >= 0 && chapterIndexToShow < story.getChapters().size()) {
 
                 Chapter currentChapter = story.getChapters().get(chapterIndexToShow);
                 chapterTitleToShow = story.getTitle() + " - " + currentChapter.getChapter_title();
                 chapterContentToShow = currentChapter.getContent();
+
+                // --- LƯU TRUYỆN VÀO DANH SÁCH ĐANG ĐỌC ---
+                ReadingListHelper readingListHelper = new ReadingListHelper(this);
+                readingListHelper.addStoryToReadingList(story.getId());
+                // --- KẾT THÚC PHẦN LƯU ---
+
             } else {
-                Toast.makeText(this, "Lỗi parse dữ liệu truyện hoặc chương", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Lỗi xử lý dữ liệu truyện hoặc chương", Toast.LENGTH_SHORT).show();
             }
         } else {
             Toast.makeText(this, "Không nhận được dữ liệu truyện từ Intent", Toast.LENGTH_SHORT).show();
@@ -107,10 +115,8 @@ public class ReaderActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    // Ghi đè onSupportNavigateUp để nút back trên toolbar hoạt động
     @Override
-    public boolean onSupportNavigateUp() {
-        onBackPressed();
-        return true;
+    public void onBackPressed() {
+        super.onBackPressed();
     }
 }

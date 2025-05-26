@@ -6,40 +6,34 @@ public class Story {
     private int id;
     private String title;
     private String author;
-    private String cover_image; // Tên file ảnh trong drawable, không có đuôi .png
+    private String cover_image;
     private String description;
+    private String category; // <<< THÊM THUỘC TÍNH NÀY
     private List<Chapter> chapters;
 
-    // Getters (bắt buộc)
+    // Getters
     public int getId() {
         return id;
     }
-
     public String getTitle() {
         return title;
     }
-
     public String getAuthor() {
         return author;
     }
-
     public String getCover_image() {
         return cover_image;
     }
-
     public String getDescription() {
         return description;
     }
-
+    public String getCategory() { // <<< THÊM GETTER NÀY
+        return category;
+    }
     public List<Chapter> getChapters() {
         return chapters;
     }
 
-    // Setters (tùy chọn)
-    // public void setId(int id) { this.id = id; }
-    // public void setTitle(String title) { this.title = title; }
-    // public void setAuthor(String author) { this.author = author; }
-    // public void setCover_image(String cover_image) { this.cover_image = cover_image; }
-    // public void setDescription(String description) { this.description = description; }
-    // public void setChapters(List<Chapter> chapters) { this.chapters = chapters; }
+    // Setters (tùy chọn, không bắt buộc nếu chỉ đọc từ JSON)
+    // public void setCategory(String category) { this.category = category; }
 }

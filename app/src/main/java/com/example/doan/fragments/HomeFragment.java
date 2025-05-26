@@ -1,4 +1,4 @@
-package com.example.doan.fragments; // Đảm bảo package name đúng
+package com.example.doan.fragments;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -7,7 +7,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -17,7 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.example.doan.R; // Đảm bảo import R đúng
+import com.example.doan.R;
 import com.example.doan.adapter.StoryAdapter;
 import com.example.doan.model.Story;
 
@@ -35,12 +34,14 @@ public class HomeFragment extends Fragment {
     private ImageView arrowNewlyUpdated, arrowHot, arrowAllStories;
 
     private StoryAdapter newlyUpdatedAdapter, hotAdapter, allStoriesAdapter;
-    private List<Story> storyList = new ArrayList<>();
+    private List<Story> fullStoryList = new ArrayList<>();
+    private List<Story> initialNewlyUpdatedList = new ArrayList<>();
+    private List<Story> initialHotList = new ArrayList<>();
+
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Liên kết layout fragment_home.xml với Fragment này
         return inflater.inflate(R.layout.fragment_home, container, false);
     }
 
@@ -55,17 +56,14 @@ public class HomeFragment extends Fragment {
     }
 
     private void initViews(View view) {
-        // Mục Truyện Mới Cập Nhật
         recyclerNewlyUpdated = view.findViewById(R.id.recycler_view_newly_updated);
         headerNewlyUpdated = view.findViewById(R.id.header_newly_updated);
         arrowNewlyUpdated = view.findViewById(R.id.arrow_newly_updated);
 
-        // Mục Đang Hot
         recyclerHot = view.findViewById(R.id.recycler_view_hot);
         headerHot = view.findViewById(R.id.header_hot);
         arrowHot = view.findViewById(R.id.arrow_hot);
 
-        // Mục Tất Cả Truyện
         recyclerAllStories = view.findViewById(R.id.recycler_view_all_stories);
         headerAllStories = view.findViewById(R.id.header_all_stories);
         arrowAllStories = view.findViewById(R.id.arrow_all_stories);
@@ -74,7 +72,7 @@ public class HomeFragment extends Fragment {
     private void loadStoriesFromJson() {
         String jsonString;
         try {
-            // Sử dụng requireContext() trong Fragment để đảm bảo Context không null
+            if (getContext() == null) return;
             InputStream is = requireContext().getAssets().open("stories_data.json");
             int size = is.available();
             byte[] buffer = new byte[size];
@@ -84,54 +82,84 @@ public class HomeFragment extends Fragment {
 
             Gson gson = new Gson();
             Type storyListType = new TypeToken<ArrayList<Story>>(){}.getType();
-            storyList = gson.fromJson(jsonString, storyListType);
+            fullStoryList = gson.fromJson(jsonString, storyListType);
 
-            if (storyList == null) { // Đề phòng trường hợp file JSON rỗng hoặc sai cú pháp
-                storyList = new ArrayList<>();
+            if (fullStoryList == null) {
+                fullStoryList = new ArrayList<>();
+            }
+
+            initialNewlyUpdatedList.clear();
+            if (!fullStoryList.isEmpty()) {
+                int count = Math.min(5, fullStoryList.size());
+                for (int i = 0; i < count; i++) {
+                    initialNewlyUpdatedList.add(fullStoryList.get(i));
+                }
+            }
+
+            initialHotList.clear();
+            if (fullStoryList.size() > 5) {
+                int start = 5;
+                int count = Math.min(5, fullStoryList.size() - start);
+                for (int i = 0; i < count; i++) {
+                    initialHotList.add(fullStoryList.get(start + i));
+                }
             }
 
         } catch (IOException e) {
             e.printStackTrace();
-            storyList = new ArrayList<>(); // Khởi tạo list rỗng nếu có lỗi
+            fullStoryList = new ArrayList<>();
+            initialNewlyUpdatedList = new ArrayList<>();
+            initialHotList = new ArrayList<>();
             Toast.makeText(getContext(), "Lỗi khi đọc file JSON", Toast.LENGTH_SHORT).show();
         }
     }
 
     private void setupRecyclerViews() {
-        // Truyện Mới Cập Nhật (cuộn ngang)
+        // Constructor của StoryAdapter giờ chỉ nhận (Context, List<Story>)
+        // Nó sẽ tự đặt showDeleteButton = false
         recyclerNewlyUpdated.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-        newlyUpdatedAdapter = new StoryAdapter(getContext(), storyList); // Tạm thời dùng chung danh sách
+        newlyUpdatedAdapter = new StoryAdapter(getContext(), initialNewlyUpdatedList);
         recyclerNewlyUpdated.setAdapter(newlyUpdatedAdapter);
 
-        // Đang Hot (cuộn ngang)
         recyclerHot.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-        hotAdapter = new StoryAdapter(getContext(), storyList); // Tạm thời dùng chung danh sách
+        hotAdapter = new StoryAdapter(getContext(), initialHotList);
         recyclerHot.setAdapter(hotAdapter);
 
-        // Tất Cả Truyện (lưới 2 cột)
         recyclerAllStories.setLayoutManager(new GridLayoutManager(getContext(), 2));
-        allStoriesAdapter = new StoryAdapter(getContext(), storyList); // Tạm thời dùng chung danh sách
+        allStoriesAdapter = new StoryAdapter(getContext(), fullStoryList);
         recyclerAllStories.setAdapter(allStoriesAdapter);
     }
 
+    // HÀM NÀY SẼ ĐƯỢC GỌI TỪ MAINACTIVITY NẾU BẠN CÓ SEARCHVIEW TRÊN TOOLBAR
+    // Hiện tại SearchFragment tự xử lý, nên hàm này trong HomeFragment có thể không cần thiết nữa
+    // trừ khi bạn muốn HomeFragment cũng có thể lọc.
+    public void filterStories(String query) {
+        if (newlyUpdatedAdapter != null) {
+            newlyUpdatedAdapter.filter(query);
+        }
+        if (hotAdapter != null) {
+            hotAdapter.filter(query);
+        }
+        if (allStoriesAdapter != null) {
+            allStoriesAdapter.filter(query);
+        }
+    }
+
     private void setupToggleActions() {
-        // Mục Mới Cập Nhật: Mặc định hiện (visibility="visible" trong XML), mũi tên xoay lên
         arrowNewlyUpdated.setRotation(180);
+        recyclerNewlyUpdated.setVisibility(View.VISIBLE);
 
-        // Mục Đang Hot: Mặc định ẩn (visibility="gone" trong XML), mũi tên xoay xuống
         arrowHot.setRotation(0);
-        // Không cần gọi toggleSection(recyclerHot, arrowHot, false) vì visibility đã là 'gone' trong XML
+        recyclerHot.setVisibility(View.GONE);
 
-        // Mục Tất Cả Truyện: Mặc định ẩn (visibility="gone" trong XML), mũi tên xoay xuống
         arrowAllStories.setRotation(0);
-        // Không cần gọi toggleSection(recyclerAllStories, arrowAllStories, false)
+        recyclerAllStories.setVisibility(View.GONE);
 
         headerNewlyUpdated.setOnClickListener(v -> toggleSection(recyclerNewlyUpdated, arrowNewlyUpdated));
         headerHot.setOnClickListener(v -> toggleSection(recyclerHot, arrowHot));
         headerAllStories.setOnClickListener(v -> toggleSection(recyclerAllStories, arrowAllStories));
     }
 
-    // Đã sửa lại hàm toggleSection để đơn giản hơn dựa trên visibility đã có
     private void toggleSection(View section, ImageView arrow) {
         boolean isVisible = section.getVisibility() == View.VISIBLE;
         section.setVisibility(isVisible ? View.GONE : View.VISIBLE);
